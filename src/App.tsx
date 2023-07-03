@@ -2,6 +2,10 @@ import React, { useEffect, useReducer } from "react";
 import Header from "./Header";
 import Main from "./Main";
 import type { State } from "./types/Modules";
+import Loader from "./Loader";
+import Error from "./Error";
+import StartScreen from "./StartScreen";
+import Question from "./Question";
 
 export enum Status {
   loading = "loading",
@@ -14,17 +18,22 @@ export enum Status {
 export enum CaseType {
   dataReceived = "dataReceived",
   dataFailed = "dataFailed",
+  start = "start",
+  newAnswer = "newAnswer",
 }
 
 const initialState: State = {
   questions: [],
   status: Status.loading,
   error: "",
+  index: 0,
+  answer: null,
+  points: 0,
 };
 
 type Action = {
   type: CaseType;
-  payload: any;
+  payload?: any;
 };
 
 function reducer(state: State, action: Action): State {
@@ -41,15 +50,43 @@ function reducer(state: State, action: Action): State {
         ...state,
         status: Status.error,
       };
+
+    case CaseType.start:
+      return {
+        ...state,
+        status: Status.active,
+      };
+
+    case CaseType.newAnswer:
+      const question = state.questions.at(state.index);
+
+      console.log(question);
+      let points: number;
+      if (question) {
+        points =
+          question?.correctOption === action.payload
+            ? state.points + question?.points
+            : state.points;
+      } else {
+        points = state.points;
+      }
+
+      return {
+        ...state,
+        answer: action.payload,
+        points: points,
+      };
+
     default:
-      throw new Error("Unknown action type");
+      return state;
   }
 }
 
 export default function App(): JSX.Element {
-  const [state, dispatch] = useReducer(reducer, initialState);
-
-  console.log(state);
+  const [{ status, questions, index, answer }, dispatch] = useReducer(
+    reducer,
+    initialState
+  );
 
   useEffect(function () {
     fetch("http://localhost:5000/questions")
@@ -59,12 +96,25 @@ export default function App(): JSX.Element {
   }, []);
 
   return (
-    <>
+    <div className="app">
       <Header />
       <Main>
-        <p>1/15</p>
-        <p>Questions</p>
+        {status === Status.loading && <Loader />}
+        {status === Status.error && <Error />}
+        {status === Status.ready && (
+          <StartScreen
+            numberOfQuestions={questions.length}
+            dispatch={dispatch}
+          />
+        )}
+        {status === Status.active && (
+          <Question
+            question={questions[index]}
+            answer={answer!}
+            dispatch={dispatch}
+          />
+        )}
       </Main>
-    </>
+    </div>
   );
 }

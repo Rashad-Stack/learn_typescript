@@ -1,6 +1,6 @@
 import { Status } from "../App";
 
-type Question = {
+export type Question = {
   correctOption: number;
   options: string[];
   points: number;
@@ -11,4 +11,7 @@ export interface State {
   questions: Question[];
   status: Status;
   error: string;
+  index: number;
+  answer: number | null;
+  points: number;
 }

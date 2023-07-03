@@ -6,6 +6,7 @@ import Loader from "./Loader";
 import Error from "./Error";
 import StartScreen from "./StartScreen";
 import Question from "./Question";
+import NextButton from "./components/NextButton";
 
 export enum Status {
   loading = "loading",
@@ -20,6 +21,8 @@ export enum CaseType {
   dataFailed = "dataFailed",
   start = "start",
   newAnswer = "newAnswer",
+  nextQuestion = "nextQuestion",
+  prevQuestion = "prevQuestion",
 }
 
 const initialState: State = {
@@ -60,7 +63,6 @@ function reducer(state: State, action: Action): State {
     case CaseType.newAnswer:
       const question = state.questions.at(state.index);
 
-      console.log(question);
       let points: number;
       if (question) {
         points =
@@ -75,6 +77,20 @@ function reducer(state: State, action: Action): State {
         ...state,
         answer: action.payload,
         points: points,
+      };
+
+    case CaseType.nextQuestion:
+      return {
+        ...state,
+        index: state.questions.length > state.index + 1 ? state.index + 1 : 0,
+        answer: null,
+      };
+
+    case CaseType.prevQuestion:
+      return {
+        ...state,
+        index: state.index < 0 ? 0 : state.index - 1,
+        answer: null,
       };
 
     default:
@@ -108,11 +124,18 @@ export default function App(): JSX.Element {
           />
         )}
         {status === Status.active && (
-          <Question
-            question={questions[index]}
-            answer={answer!}
-            dispatch={dispatch}
-          />
+          <>
+            <Question
+              question={questions[index]}
+              answer={answer!}
+              dispatch={dispatch}
+            />
+            <NextButton
+              title="Next Question"
+              answer={answer!}
+              dispatch={() => dispatch({ type: CaseType.nextQuestion })}
+            />
+          </>
         )}
       </Main>
     </div>

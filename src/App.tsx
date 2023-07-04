@@ -7,6 +7,8 @@ import Error from "./Error";
 import StartScreen from "./StartScreen";
 import Question from "./Question";
 import NextButton from "./components/NextButton";
+import Progress from "./components/Progress";
+import FinishedScreen from "./components/FinishedScreen";
 
 export enum Status {
   loading = "loading",
@@ -23,6 +25,7 @@ export enum CaseType {
   newAnswer = "newAnswer",
   nextQuestion = "nextQuestion",
   prevQuestion = "prevQuestion",
+  submitQuestion = "submitQuestion",
 }
 
 const initialState: State = {
@@ -86,11 +89,10 @@ function reducer(state: State, action: Action): State {
         answer: null,
       };
 
-    case CaseType.prevQuestion:
+    case CaseType.submitQuestion:
       return {
         ...state,
-        index: state.index < 0 ? 0 : state.index - 1,
-        answer: null,
+        status: Status.finished,
       };
 
     default:
@@ -99,9 +101,14 @@ function reducer(state: State, action: Action): State {
 }
 
 export default function App(): JSX.Element {
-  const [{ status, questions, index, answer }, dispatch] = useReducer(
+  const [{ status, questions, index, answer, points }, dispatch] = useReducer(
     reducer,
     initialState
+  );
+
+  const maxPossiblePoints = questions.reduce(
+    (prev, curr) => prev + curr.points,
+    0
   );
 
   useEffect(function () {
@@ -125,6 +132,12 @@ export default function App(): JSX.Element {
         )}
         {status === Status.active && (
           <>
+            <Progress
+              index={index + 1}
+              numQuestions={questions.length}
+              points={points}
+              maxPossiblePoints={maxPossiblePoints}
+            />
             <Question
               question={questions[index]}
               answer={answer!}
@@ -133,9 +146,17 @@ export default function App(): JSX.Element {
             <NextButton
               title="Next Question"
               answer={answer!}
-              dispatch={() => dispatch({ type: CaseType.nextQuestion })}
+              dispatch={dispatch}
+              index={index}
+              numQuestions={questions.length}
             />
           </>
+        )}
+        {status === Status.finished && (
+          <FinishedScreen
+            maxPossiblePoints={maxPossiblePoints}
+            points={points}
+          />
         )}
       </Main>
     </div>

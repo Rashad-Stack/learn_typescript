@@ -21,7 +21,7 @@ export default function Option({
           onClick={() => dispatch({ type: CaseType.newAnswer, payload: index })}
           disabled={answer !== null}
           className={`btn btn-option ${index === answer ? "answer" : ""} ${
-            answer
+            answer !== null
               ? index === question.correctOption
                 ? "correct"
                 : "wrong"

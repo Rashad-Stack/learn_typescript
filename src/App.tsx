@@ -9,6 +9,8 @@ import Question from "./Question";
 import NextButton from "./components/NextButton";
 import Progress from "./components/Progress";
 import FinishedScreen from "./components/FinishedScreen";
+import Footer from "./components/Footer";
+import Timer from "./components/Timer";
 
 export enum Status {
   loading = "loading",
@@ -26,6 +28,8 @@ export enum CaseType {
   nextQuestion = "nextQuestion",
   prevQuestion = "prevQuestion",
   submitQuestion = "submitQuestion",
+  restart = "restart",
+  tick = "tick",
 }
 
 const initialState: State = {
@@ -35,12 +39,16 @@ const initialState: State = {
   index: 0,
   answer: null,
   points: 0,
+  time: 10,
+  highscore: 0,
 };
 
 type Action = {
   type: CaseType;
   payload?: any;
 };
+
+const SECS_PER_QUESTION: number = 30;
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
@@ -61,6 +69,8 @@ function reducer(state: State, action: Action): State {
       return {
         ...state,
         status: Status.active,
+        index: 0,
+        time: state.questions.length * SECS_PER_QUESTION,
       };
 
     case CaseType.newAnswer:
@@ -93,6 +103,22 @@ function reducer(state: State, action: Action): State {
       return {
         ...state,
         status: Status.finished,
+        highscore:
+          state.highscore < state.points ? state.points : state.highscore,
+      };
+
+    case CaseType.restart:
+      return {
+        ...initialState,
+        questions: state.questions,
+        status: Status.ready,
+      };
+
+    case CaseType.tick:
+      return {
+        ...state,
+        time: state.time - 1,
+        status: state.time === 0 ? Status.finished : state.status,
       };
 
     default:
@@ -101,10 +127,10 @@ function reducer(state: State, action: Action): State {
 }
 
 export default function App(): JSX.Element {
-  const [{ status, questions, index, answer, points }, dispatch] = useReducer(
-    reducer,
-    initialState
-  );
+  const [
+    { status, questions, index, answer, points, time, highscore },
+    dispatch,
+  ] = useReducer(reducer, initialState);
 
   const maxPossiblePoints = questions.reduce(
     (prev, curr) => prev + curr.points,
@@ -143,19 +169,24 @@ export default function App(): JSX.Element {
               answer={answer!}
               dispatch={dispatch}
             />
-            <NextButton
-              title="Next Question"
-              answer={answer!}
-              dispatch={dispatch}
-              index={index}
-              numQuestions={questions.length}
-            />
+            <Footer>
+              <Timer time={time} dispatch={dispatch} />
+              <NextButton
+                title="Next Question"
+                answer={answer!}
+                dispatch={dispatch}
+                index={index}
+                numQuestions={questions.length}
+              />
+            </Footer>
           </>
         )}
         {status === Status.finished && (
           <FinishedScreen
             maxPossiblePoints={maxPossiblePoints}
             points={points}
+            dispatch={dispatch}
+            highscore={highscore}
           />
         )}
       </Main>

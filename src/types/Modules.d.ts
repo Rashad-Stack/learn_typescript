@@ -14,4 +14,6 @@ export interface State {
   index: number;
   answer: number | null;
   points: number;
+  time: number;
+  highscore: number;
 }
